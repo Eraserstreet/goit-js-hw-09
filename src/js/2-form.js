@@ -1,41 +1,54 @@
 const form = document.querySelector('.feedback-form');
+const messageOfInput = form.elements.message;
+const emailOfInput = form.elements.email;
 const localStorageKey = 'feedback-form-state';
-const email = form.elements.email;
-const message = form.elements.message;
 
-const storedFormData = JSON.parse(localStorage.getItem(localStorageKey)) || {
-  email: '',
-  message: '',
-};
-
-email.value = storedFormData.email;
-message.value = storedFormData.message;
-
-form.addEventListener('input', event => {
-  const formData = {
-    email: email.value.trim(),
-    message: message.value.trim(),
-  };
-
-  saveFormData(formData);
-});
-
-form.addEventListener('submit', function (event) {
-  event.preventDefault();
-  if (email.value == '' || message.value == '') {
-    return alert('All form fields must be filled in');
+const dataFromLocalStorage = localStorage.getItem(localStorageKey);
+if (dataFromLocalStorage) {
+  try {
+    const parsedData = JSON.parse(dataFromLocalStorage);
+    if (parsedData && typeof parsedData === 'object') {
+      messageOfInput.value = parsedData.message ?? '';
+      emailOfInput.value = parsedData.email ?? '';
+    }
+  } catch (error) {
+    console.error('Error parsing data from local storage:', error);
   }
-  const formData = {
-    email: email.value.trim(),
-    message: message.value.trim(),
+}
+
+form.addEventListener('input', saveData);
+form.addEventListener('submit', uploadData);
+
+function saveData() {
+  const dataOfInput = {
+    email: emailOfInput.value,
+    message: messageOfInput.value,
   };
+  const trimedDataOfInput = trimValues(dataOfInput);
+  localStorage.setItem(localStorageKey, JSON.stringify(trimedDataOfInput));
+}
 
-  // saveFormData(formData);
-  console.log(formData);
-  form.reset();
+function trimValues(obj) {
+  const arrOfKeyVal = Object.entries(obj);
+  let trimedObj = {};
+  for (const [key, value] of arrOfKeyVal) {
+    trimedObj[key] = value.toString().trim();
+  }
+  return trimedObj;
+}
+
+function uploadData(evt) {
+  evt.preventDefault();
+  const email = evt.target.elements.email.value.trim();
+  const message = evt.target.elements.message.value.trim();
+  if (email === '' || message === '') {
+    alert('Please complete all the fields!');
+    return;
+  }
+  console.log({
+    email,
+    message,
+  });
   localStorage.removeItem(localStorageKey);
-});
-
-function saveFormData(formData) {
-  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
+  form.reset();
 }
